@@ -22,28 +22,28 @@ public class BoardColumnDAO {
 
     public BoardColumnEntity insert(final BoardColumnEntity entity) throws SQLException {
         var sql = "INSERT INTO BOARDS_COLUMNS (name, `order`, kind, board_id) VALUES (?, ?, ?, ?);";
-        try(var statement = connection.prepareStatement(sql)){
-            var i = 1;
-            statement.setString(i ++, entity.getName());
-            statement.setInt(i ++, entity.getOrder());
-            statement.setString(i ++, entity.getKind().name());
+        try (var statement = connection.prepareStatement(sql)) {
+            int i = 1;
+            statement.setString(i++, entity.getName());
+            statement.setInt(i++, entity.getOrder());
+            statement.setString(i++, entity.getKind().name());
             statement.setLong(i, entity.getBoard().getId());
             statement.executeUpdate();
-            if (statement instanceof StatementImpl impl){
+
+            if (statement instanceof StatementImpl impl) {
                 entity.setId(impl.getLastInsertID());
             }
             return entity;
         }
     }
 
-    public List<BoardColumnEntity> findByBoardId(final Long boardId) throws SQLException{
+    public List<BoardColumnEntity> findByBoardId(final Long boardId) throws SQLException {
         List<BoardColumnEntity> entities = new ArrayList<>();
         var sql = "SELECT id, name, `order`, kind FROM BOARDS_COLUMNS WHERE board_id = ? ORDER BY `order`";
-        try(var statement = connection.prepareStatement(sql)){
+        try (var statement = connection.prepareStatement(sql)) {
             statement.setLong(1, boardId);
-            statement.executeQuery();
-            var resultSet = statement.getResultSet();
-            while (resultSet.next()){
+            var resultSet = statement.executeQuery();
+            while (resultSet.next()) {
                 var entity = new BoardColumnEntity();
                 entity.setId(resultSet.getLong("id"));
                 entity.setName(resultSet.getString("name"));
@@ -51,29 +51,27 @@ public class BoardColumnDAO {
                 entity.setKind(findByName(resultSet.getString("kind")));
                 entities.add(entity);
             }
-            return entities;
         }
+        return entities;
     }
 
     public List<BoardColumnDTO> findByBoardIdWithDetails(final Long boardId) throws SQLException {
         List<BoardColumnDTO> dtos = new ArrayList<>();
-        var sql =
-                """
-                SELECT bc.id,
-                       bc.name,
-                       bc.kind,
-                       (SELECT COUNT(c.id)
-                               FROM CARDS c
-                              WHERE c.board_column_id = bc.id) cards_amount
-                  FROM BOARDS_COLUMNS bc
-                 WHERE board_id = ?
-                 ORDER BY `order`;
-                """;
-        try(var statement = connection.prepareStatement(sql)){
+        var sql = """
+            SELECT bc.id,
+                   bc.name,
+                   bc.kind,
+                   (SELECT COUNT(c.id)
+                      FROM CARDS c
+                     WHERE c.board_column_id = bc.id) cards_amount
+              FROM BOARDS_COLUMNS bc
+             WHERE board_id = ?
+             ORDER BY `order`;
+            """;
+        try (var statement = connection.prepareStatement(sql)) {
             statement.setLong(1, boardId);
-            statement.executeQuery();
-            var resultSet = statement.getResultSet();
-            while (resultSet.next()){
+            var resultSet = statement.executeQuery();
+            while (resultSet.next()) {
                 var dto = new BoardColumnDTO(
                         resultSet.getLong("bc.id"),
                         resultSet.getString("bc.name"),
@@ -82,45 +80,44 @@ public class BoardColumnDAO {
                 );
                 dtos.add(dto);
             }
-            return dtos;
         }
+        return dtos;
     }
 
-    public Optional<BoardColumnEntity> findById(final Long boardId) throws SQLException{
-        var sql =
-        """
-        SELECT bc.name,
-               bc.kind,
-               c.id,
-               c.title,
-               c.description
-          FROM BOARDS_COLUMNS bc
-          LEFT JOIN CARDS c
-            ON c.board_column_id = bc.id
-         WHERE bc.id = ?;
-        """;
-        try(var statement = connection.prepareStatement(sql)){
-            statement.setLong(1, boardId);
-            statement.executeQuery();
-            var resultSet = statement.getResultSet();
-            if (resultSet.next()){
+    public Optional<BoardColumnEntity> findById(final Long columnId) throws SQLException {
+        var sql = """
+            SELECT bc.name,
+                   bc.kind,
+                   c.id,
+                   c.title,
+                   c.description
+              FROM BOARDS_COLUMNS bc
+              LEFT JOIN CARDS c
+                ON c.board_column_id = bc.id
+             WHERE bc.id = ?;
+            """;
+        try (var statement = connection.prepareStatement(sql)) {
+            statement.setLong(1, columnId);
+            var resultSet = statement.executeQuery();
+
+            if (resultSet.next()) {
                 var entity = new BoardColumnEntity();
                 entity.setName(resultSet.getString("bc.name"));
                 entity.setKind(findByName(resultSet.getString("bc.kind")));
+
                 do {
+                    if (isNull(resultSet.getString("c.title"))) break;
+
                     var card = new CardEntity();
-                    if (isNull(resultSet.getString("c.title"))){
-                        break;
-                    }
                     card.setId(resultSet.getLong("c.id"));
                     card.setTitle(resultSet.getString("c.title"));
                     card.setDescription(resultSet.getString("c.description"));
                     entity.getCards().add(card);
-                }while (resultSet.next());
+                } while (resultSet.next());
+
                 return Optional.of(entity);
             }
-            return Optional.empty();
         }
+        return Optional.empty();
     }
-
 }
