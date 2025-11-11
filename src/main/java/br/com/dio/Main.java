@@ -15,9 +15,11 @@ public class Main {
         System.out.println("Projeto desenvolvido no desafio DIO - Java Fundamentals");
         System.out.println("===============================================\n");
 
-        try (var connection = getConnection()) {
-            new MigrationStrategy(connection).executeMigration();
-        }
+        try (Connection connection = ConnectionConfig.getConnection()) {
+    BoardQueryService service = new BoardQueryService(connection);
+    BoardDetailsDTO board = service.findBoardDetails(1L);
+    System.out.println(board);
+}
 
         new MainMenu().execute();
     }
