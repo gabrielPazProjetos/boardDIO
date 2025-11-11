@@ -16,22 +16,23 @@ public class BoardEntity {
 
     private Long id;
     private String name;
+
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private List<BoardColumnEntity> boardColumns = new ArrayList<>();
 
-    public BoardColumnEntity getInitialColumn(){
-        return getFilteredColumn(bc -> bc.getKind().equals(INITIAL));
+    public BoardColumnEntity getInitialColumn() {
+        return findColumnByKind(INITIAL);
     }
 
-    public BoardColumnEntity getCancelColumn(){
-        return getFilteredColumn(bc -> bc.getKind().equals(CANCEL));
+    public BoardColumnEntity getCancelColumn() {
+        return findColumnByKind(CANCEL);
     }
 
-    private BoardColumnEntity getFilteredColumn(Predicate<BoardColumnEntity> filter){
+    private BoardColumnEntity findColumnByKind(BoardColumnKindEnum kind) {
         return boardColumns.stream()
-                .filter(filter)
-                .findFirst().orElseThrow();
+                .filter(column -> column.getKind() == kind)
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("Column of kind " + kind + " not found"));
     }
-
 }
