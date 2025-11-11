@@ -7,14 +7,18 @@ import java.sql.SQLException;
 
 import static br.com.dio.persistence.config.ConnectionConfig.getConnection;
 
-
 public class Main {
 
     public static void main(String[] args) throws SQLException {
-        try(var connection = getConnection()){
+        System.out.println("===============================================");
+        System.out.println("Bem-vindo ao seu Board de Tarefas em Java!");
+        System.out.println("Projeto desenvolvido no desafio DIO - Java Fundamentals");
+        System.out.println("===============================================\n");
+
+        try (var connection = getConnection()) {
             new MigrationStrategy(connection).executeMigration();
         }
+
         new MainMenu().execute();
     }
-
 }
